@@ -1,0 +1,15 @@
+# Python temporary files
+__pycache__/
+*.pyc
+
+# ASxxxx output
+*.rel
+*.lst
+*.sym
+
+# Temporary files
+*.bak
+*~
+
+# Generated build directory
+build/
