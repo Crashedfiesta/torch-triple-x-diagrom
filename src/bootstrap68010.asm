@@ -1,4 +1,4 @@
-; TorchDiagROM v0.9 experimental: separately test main and Limpet DRAM from VRAM.
+; TorchDiagROM v1.0 experimental: separately test main and Limpet DRAM from VRAM.
 ; Main RAM is NOT required for any of this code or stack.
 ;
 ; 68010 physical VRAM map:
@@ -283,7 +283,7 @@ expand4:
         dc.b    $00,$03,$0C,$0F,$30,$33,$3C,$3F
         dc.b    $C0,$C3,$CC,$CF,$F0,$F3,$FC,$FF
 
-msg_title:      dc.b "TORCH TRIPLE X DIAGNOSTICS V0.9",0
+msg_title:      dc.b "TORCH TRIPLE X DIAGNOSTICS V1.0",0
 msg_rule:       dc.b "================================",0
 msg_6303:      dc.b "HD6303 SERVICE PROCESSOR  OK",0
 msg_vram:      dc.b "VIDEO RAM 64KB            PASS",0

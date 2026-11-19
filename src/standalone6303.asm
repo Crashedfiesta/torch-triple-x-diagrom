@@ -1,9 +1,9 @@
-        .module torchdiag_v09_green
+        .module torchdiag_v10_crtc
         .hd6303
         .area CODE (ABS)
         .org 0xC000
 
-        ; --- TorchDiagROM v0.9 colour configuration ---
+        ; --- TorchDiagROM v1.0 colour configuration ---
         ; Physical palette uses inverted RGB332 (see video.c).
         ; Colour 0 = background; colour 3 = font renderer foreground.
         ; Green $41 -> RGB #B6FFAA in the emulator's RGB332 conversion.
@@ -99,10 +99,13 @@ stage2:
         jsr     chirp
         jsr     long_gap
 
-        ; v0.9: explicitly initialise palette RAM via the HD6303.
-        ; Only after VRAM PASS; leaves the early beep-only failure path
-        ; independent of any display hardware. The real 6845 CRTC setup
-        ; remains a separate future task.
+        ; v1.0: program the 6845 with Caretaker's working display timing.
+        ; Do this only after VRAM PASS, preserving beep-only diagnosis if
+        ; the early video memory test fails. HD6303 still holds 68010 reset.
+        jsr     crtc_init
+
+        ; Explicitly initialise palette RAM via the HD6303.
+        ; Keep the v0.9 pale-green-on-black display unchanged.
         ldaa    #PAL_BACKGROUND
         staa    0x0500         ; pixel colour index 0: background
         ldaa    #PAL_UNUSED
@@ -453,6 +456,45 @@ address_failure:
         ldaa    #0x01
         staa    *0x41
         rts
+
+; --------------------------------------------------------------------
+; v1.0: Initial HD6845 CRTC timing, captured from original Caretaker.
+; 6303 $0400 = register select, $0401 = register data.
+; The first Caretaker pass uses R1=$5A and R2=$67; it then changes
+; those to R1=$5C and R2=$68. Use the settled timing here.
+; R12/R13 and R14/R15 are CRTC address units, not VRAM byte offsets.
+; Keep all sixteen writes in the original order, including cursor regs.
+; --------------------------------------------------------------------
+crtc_init:
+        ldx     #crtc_values
+        clrb                     ; R0 .. R15
+crtc_next:
+        stab    0x0400           ; Select 6845 register B
+        ldaa    0,x              ; Load Caretaker's register value
+        staa    0x0401           ; Program 6845 register
+        inx
+        incb
+        cmpb    #0x10
+        bne     crtc_next
+        rts
+
+crtc_values:
+        .byte   0x7F            ; R0  Horizontal total
+        .byte   0x5C            ; R1  Horizontal displayed (settled)
+        .byte   0x68            ; R2  Horizontal sync position (settled)
+        .byte   0x4C            ; R3  Sync widths
+        .byte   0x26            ; R4  Vertical total
+        .byte   0x00            ; R5  Vertical total adjust
+        .byte   0x20            ; R6  Vertical displayed (32 rows)
+        .byte   0x22            ; R7  Vertical sync position
+        .byte   0x04            ; R8  Mode / interlace / skew
+        .byte   0x07            ; R9  Maximum raster address (8 scanlines)
+        .byte   0x00            ; R10 Cursor start
+        .byte   0x00            ; R11 Cursor end
+        .byte   0x00            ; R12 Display start high
+        .byte   0x01            ; R13 Display start low
+        .byte   0x00            ; R14 Cursor high
+        .byte   0x01            ; R15 Cursor low
 
 ; Exactly the known-good v0.0.2 timer/speaker routines.
 chirp:
